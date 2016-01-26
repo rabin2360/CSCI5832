@@ -23,7 +23,9 @@ def parseFileContents(fileContent):
     print('Word(s):',wordCount)
     
     #count sentence
-
+    sentenceCount = len(re.findall('[A-Za-z0-9"\!.,:?)]{4,}[\.!"?)]\s+[A-Z"\(]', fileContent))
+    print('Sentence(s):',sentenceCount+1)
+                        
     #count paragraphs
     paragraphCount = len(re.findall('[^\r\n]+((\r|\n|\r\n)[^\r\n]+)*', fileContent))
     print('Paragraph(s):',paragraphCount)
