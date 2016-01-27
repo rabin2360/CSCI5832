@@ -23,15 +23,14 @@ def parseFileContents(fileContent):
     print('Word(s):',wordCount)
     
     #count sentence
-    sentenceCount = len(re.findall('[A-Za-z0-9"\!.,:?)]{4,}[\.!"?)]\s+[A-Z"\(]', fileContent))
+    sentenceCount = len(re.findall('[a-zA-CE-LN-Z0-9\.][a-zA-Z0-9]["\.?!\')]+\s+[A-Z\"(]', fileContent))
+    #the regex does not account for the very last sentence in the input text hence the sentenceCount is increment by 1
     print('Sentence(s):',sentenceCount+1)
                         
     #count paragraphs
     paragraphCount = len(re.findall('[^\r\n]+((\r|\n|\r\n)[^\r\n]+)*', fileContent))
     print('Paragraph(s):',paragraphCount)
 
-    #print(s)
-    
 #makes the main method the default method
 if __name__=="__main__":
     main()
