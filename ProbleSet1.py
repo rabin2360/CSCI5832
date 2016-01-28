@@ -1,5 +1,8 @@
 #!/bin/env/python3
 
+#Author: Rabin Ranabhat
+#Problem Set 1 - Counting words, paragraphs & sentences
+
 import re
 import sys
 
@@ -19,7 +22,7 @@ def readInputFile():
 
 def parseFileContents(fileContent):
     #count words
-    wordCount = len(re.findall('[a-zA-Z0-9\-\.\',\"\)\(]+', fileContent))
+    wordCount = len(re.findall('[a-zA-Z0-9\-\.,")(]+', fileContent))
     print('Word(s):',wordCount)
     
     #count sentence
