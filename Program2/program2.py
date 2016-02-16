@@ -8,7 +8,7 @@ import sys
 
 def main():
    
-    if len(sys.argv) > 1:
+    if len(sys.argv) > 2:
         readInputFile()
 
     else:
@@ -18,18 +18,36 @@ def main():
 
 def readInputFile():
     fileContent = ""
-
+    unigramDict = dict()
+    bigramDict = dict()
+    
+    #reading the training file
     with open(sys.argv[1]) as file:
         for line in file:
             if len(line) > 1:
                 #getting rid of the \n from the input line
-                countUniGrams(line.strip())
-                #count bi-grams
-                countBiGrams(line.strip())
-                
-def countBiGrams(line):
+                unigramDict = countUniGrams(line.strip(), unigramDict)
+
+#    print('Unigram dict \n')
+
+#    for key, value in sorted(unigramDict.items()):
+#        print(key, value)
+    
+    #reading the test file            
+    with open(sys.argv[2]) as file:
+        for line in file:
+            bigramDict = countBiGrams(line.strip(), bigramDict)
+
+#    print('Bigram dict \n', bigramDict)
+
+    calculateProbabilities(bigramDict, unigramDict)
+    
+def calculateProbabilities(bigramDict, unigramDict):
+    print('calculating the bigram probability')
+    
+def countBiGrams(line, bigramDict):
     #print('counting bi-grams', line)
-    bigramDict = dict()
+
     line = line.lower()
 
     for word1 in line.split():
@@ -51,19 +69,16 @@ def countBiGrams(line):
 
         wordPrevious = wordCurrent
     
-    print('bigram', bigramDict)
+    #print('bigram', bigramDict)
+    return bigramDict
     
-    
-def countUniGrams(line):
+def countUniGrams(line, wordDict):
     count = 0
-    #print("line: ",line)
-    wordDict = dict()
     
     #read the words separated by the white space
     for word in line.split():
         word = word.lower()
-        #print(word)
-
+    
         #if not in the dictionary, add key otherwise increment count
         if word in wordDict:
             wordDict[word] += 1
@@ -74,6 +89,8 @@ def countUniGrams(line):
 
     #print("word counts: ", count)
     #print("dict: ", wordDict)
+
+    return wordDict
 
 #makes the main method the default method
 if __name__=="__main__":
