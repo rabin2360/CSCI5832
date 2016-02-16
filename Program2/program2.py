@@ -19,22 +19,33 @@ def main():
 def readInputFile():
     fileContent = ""
 
-    with open(sys.argv[1]) as f:
-        for line in f:
+    with open(sys.argv[1]) as file:
+        for line in file:
             if len(line) > 1:
+                #getting rid of the \n from the input line
                 countUniGrams(line.strip())
 
 
 def countUniGrams(line):
     count = 0
     print("line: ",line)
-
+    wordDict = dict()
+    
     #read the words separated by the white space
     for word in line.split():
-        print(word)
+        word = word.lower()
+        #print(word)
+
+        #if not in the dictionary, add key otherwise increment count
+        if word in wordDict:
+            wordDict[word] += 1
+        else:
+            wordDict[word] = 1
+            
         count = count + 1
 
     print("word counts: ", count)
+    print("dict: ", wordDict)
 
 #makes the main method the default method
 if __name__=="__main__":
