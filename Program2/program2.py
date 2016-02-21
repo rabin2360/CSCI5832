@@ -8,7 +8,8 @@ import math
 #import re
 
 def main():
-   
+
+    #check the input parameters to ensure that training and test files are entered
     if len(sys.argv) > 2:
         readInputFile()
 
@@ -18,6 +19,7 @@ def main():
 
 
 def readInputFile():
+    
     fileContent = ""
     unigramDict = dict()
     bigramDict = dict()
@@ -38,6 +40,7 @@ def readInputFile():
 #    print('Unigram dict \n', unigramDict)
 #    print('Word count \n', wordCount)
 
+#probabilities of unigrams and bigrams
     unigramProbDict = unigramProb(unigramDict, wordCount)
     bigramProbDict = bigramProb(bigramDict, unigramDict)
 
@@ -57,16 +60,25 @@ def readInputFile():
             if len(line) > 1:
                 print("S = ", line.strip())
                 line = line.lower()
+
                 #getting the first word in the line
                 firstKey = line.split(None, 1)[0]
                 
                 bigramLineDict = countBiGrams(line.strip(), bigramLineDict)
                 unigramLineDict = countUniGrams(line.strip(), unigramLineDict)
                 #print(bigramLineDict)
-                unigramProbability(unigramLineDict, unigramProbDict)
-                bigramProbability(bigramLineDict, bigramProbDict, unigramProbDict, firstKey)            
 
+                unigramArray = line.strip()
+                unigramArray = unigramArray.split()
+
+                bigramArray = line.strip()
+                bigramArray = bigramArray.split()
+                
+                unigramProbabilityModel(unigramArray, unigramProbDict)
+                bigramProbabilityModel(bigramLineDict, bigramProbDict, unigramProbDict, firstKey)            
                 bigramSmoothingProbability(bigramLineDict, bigramDict, unigramDict, firstKey)
+
+#unigram probabilities
 def unigramProb(unigramDict, wordCount):
     unigramProbabilityDict = dict()
 
@@ -75,6 +87,7 @@ def unigramProb(unigramDict, wordCount):
     
     return unigramProbabilityDict
 
+#probabilities of bigram combinations
 def bigramProb(bigramDict, unigramDict):
     bigramProbabilityDict = dict()
 #    print(unigramDict)
@@ -86,33 +99,37 @@ def bigramProb(bigramDict, unigramDict):
 
     return bigramProbabilityDict
 
-def unigramProbability(unigramLineDict, unigramProbDict):
+#uses the unigram probabilties to determine probability for the sentence using unigrams
+def unigramProbabilityModel(unigramLineArray, unigramProbDict):
 
-    unigramProbability = 1
+    unigramProbability = 0
     hasZero = False
-    
-    for key in unigramLineDict:
-        if unigramProbDict.get(key) == None:
+        
+    for i in range(len(unigramLineArray)):
+        if unigramProbDict.get(unigramLineArray[i]) == None:
             hasZero = True
             break
         else:
-            unigramProbability = unigramProbability + math.log10(unigramProbDict.get(key))
-
+            #print('key: ',unigramLineArray[i],' value',unigramProbDict.get(unigramLineArray[i]), 'log ',math.log10(unigramProbDict.get(unigramLineArray[i])))      
+            unigramProbability = unigramProbability + math.log10(unigramProbDict.get(unigramLineArray[i]))
+            
+#    print("Count ", count)
     if hasZero == False:
-        print("Unigrams: logprob(S) = %.4f" %math.exp(unigramProbability))
+        print("Unigrams: logprob(S) = ", unigramProbability)
     else:
         print("Unigrams: logprob(S) = undefined")
             
-       
-def bigramProbability(bigramLineDict, bigramProbDict, unigramProbDict, firstKey):
+#uses the bigram probabilites to determine probability for the sentence. Bigrams used
+def bigramProbabilityModel(bigramLineDict, bigramProbDict, unigramProbDict, firstKey):
     #print('bigram Line Dict: ', bigramLineDict)
     #print('bigram Prob Dict: ', bigramProbDict)
     #print('uingram Dict: ', unigramProbDict)
 
     #getting the first value in the line
-    probability = 1
+    probability = 0
     bigramProbValue = 0
     hasZero = False
+    count = 0
     
     #checking if the key is in unigram
     if unigramProbDict.get(firstKey) == None:
@@ -120,7 +137,8 @@ def bigramProbability(bigramLineDict, bigramProbDict, unigramProbDict, firstKey)
         hasZero = True
     else:
         probability = math.log10(unigramProbDict.get(firstKey))
-    
+        #print("unigramKey", firstKey," prob value: ",unigramProbDict.get(firstKey), " value:",math.log10(unigramProbDict.get(firstKey)))
+        count += 1
         for key, value in bigramLineDict.items():
             
                 bigramKey = key
@@ -131,34 +149,34 @@ def bigramProbability(bigramLineDict, bigramProbDict, unigramProbDict, firstKey)
                     break
                 else:
                     bigramProbValue = bigramProbDict.get(key)
-                    probability = probability + math.log10(bigramProbValue)
-                    #print("prob value: ",bigramProbValue, "bigramKey", bigramKey)
-
+                    probability = probability + value*math.log10(bigramProbValue)
+                    count += 1
+                    #print("bigramKey", key,": ",bigramProbValue, "-->", math.log10(bigramProbValue), "count: ", value)
     
     if hasZero == False:
-        probability = math.exp(probability)
-        print('Bigrams: logprob(S) = %.4f' % probability)
+        probability = probability
+        print('Bigrams: logprob(S) = ',probability)
     else:
         print('Bigrams: logprob(S) = undefined')
-    #formatted printing
-    
 
-    #print('\n')
-    #unigram language modeling without smoothing
-           
-    #bigram language modeling with smoothing
 
 
 def bigramSmoothingProbability(bigramLineDict, bigramDict, unigramDict, firstKey):
 
-    bigramCount = len(bigramDict)
-    probability = 1
-
+    probability = 0
+    tokenCount = 0
+    
     #account for the first element
-    #-----need to work here ----------
-    
+    if unigramDict.get(firstKey) == None:
+        unigramDict[firstKey] = 1
+
+    for key, value in unigramDict.items():
+        tokenCount += unigramDict.get(key)
+
+    #Need to smooth unigrams over?
+    probability = math.log10(unigramDict.get(firstKey) / tokenCount)
+        
     #account for the rest of it
-    
     for key, value in bigramLineDict.items():
         if bigramDict.get(key) == None:
             bigramDict[key] = 1
@@ -166,53 +184,45 @@ def bigramSmoothingProbability(bigramLineDict, bigramDict, unigramDict, firstKey
             bigramDict[key] += 1
 
         #key value for bigram
-        bigramKeyValue = bigramDict[key]
+        bigramCount = bigramDict[key]
 
-        #demonimator
-        denominator = unigramDict.get(key[1]) + len(bigramDict)
+        #demonimator - not sure about this part
+        countOfPrecedingWord = unigramDict.get(key[1]) + len(unigramDict)
 
-        probability = probability + math.log10(bigramKeyValue/denominator)
+        probability = probability + math.log10(bigramCount/countOfPrecedingWord)
 
 
-    probability = math.exp(probability)
-    print('Smoothed Bigrams: logprob(S) = %.4f' % probability)
+#    probability = math.exp(probability)
+    print('Smoothed Bigrams: logprob(S) = ',probability)
     print()
     
     
-        
+#counting the occurences of bigrams in the tranining corpus 
 def countBiGrams(line, bigramDict):
-    #print('counting bi-grams', line)
-
     wordArray = line.split()
 
     for i in range(len(wordArray)):
         if i < len(wordArray)-1:
             alias = (wordArray[i+1], wordArray[i])
 
-            if alias in bigramDict:
+            if bigramDict.get(alias) != None:
                 bigramDict[alias] += 1
             else:
                 bigramDict[alias] = 1
 
     return bigramDict
-    
+
+#counting the occurences of unigrams in the traning corpus
 def countUniGrams(line, wordDict):
-    count = 0
-    
     #read the words separated by the white space
     for word in line.split():
         
         #if not in the dictionary, add key otherwise increment count
-        if word in wordDict:
+        if wordDict.get(word) != None:
             wordDict[word] += 1
         else:
             wordDict[word] = 1
             
-        count = count + 1
-
-    #print("word counts: ", count)
-    #print("dict: ", wordDict)
-
     return wordDict
 
 #makes the main method the default method
