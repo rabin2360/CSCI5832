@@ -2,6 +2,7 @@
 
 #Author: Rabin Ranabhat
 #Problem Set 2 - N-grams modeling
+#Did not use the start and end tags for Bigram modeling
 
 import sys
 import math
@@ -114,7 +115,7 @@ def unigramProbabilityModel(unigramLineArray, unigramProbDict):
             
     #if all the words in the test sentence are in the unigram probability dictionary, print the probability, otherwise, print undefined
     if hasZero == False:
-        print("Unigrams: logprob(S) = ", unigramProbability)
+        print("Unigrams: logprob(S) = %0.4f" %unigramProbability)
     else:
         print("Unigrams: logprob(S) = undefined")
             
@@ -150,7 +151,7 @@ def bigramProbabilityModel(bigramLineDict, bigramProbDict, unigramProbDict, firs
     #if all the bigrams for the test sentence are present in the bigram probability dictionary, print the probability, otherwise print undefined
     if hasZero == False:
         probability = probability
-        print('Bigrams: logprob(S) = ',probability)
+        print('Bigrams: logprob(S) = %0.4f' %probability)
     else:
         print('Bigrams: logprob(S) = undefined')
 
@@ -189,7 +190,7 @@ def bigramSmoothingProbability(bigramLineDict, bigramDict, unigramDict, firstKey
         probability = probability + math.log10(bigramCount/countOfPrecedingWord)
 
     #printing the bigram with smoothing
-    print('Smoothed Bigrams: logprob(S) = ',probability)
+    print('Smoothed Bigrams: logprob(S) = %0.4f' %probability)
     print()
     
     
