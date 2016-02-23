@@ -5,7 +5,6 @@
 
 import sys
 import math
-#import re
 
 def main():
 
