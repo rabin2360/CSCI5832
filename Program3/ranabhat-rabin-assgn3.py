@@ -7,11 +7,33 @@ import sys
 import math
 import csv
 
-def likelihoodProbs():
-    print("I am likelihood probs evaluator\n")
+#calculates probability given the count dictionary, tag counts and the index of the key
+def calculateProbability(countDict, tagCounts, keyIndex):
+    #contains the probability for the tag-word association
+    probabilityDict = dict()
 
-def transitionProbs():
-    print("I am transition probs evaluator\n")
+    #computes the probability for likelihood of word-tag association
+    for key, values in countDict.items():
+        #tag key
+        tagKey = key[keyIndex]
+        probabilityDict[key] = countDict[key]/tagCounts[tagKey]
+
+    ######################DEBUG####################
+    for key, value in probabilityDict.items():
+        print(key, value)
+    ######################END#####################
+
+    return probabilityDict
+
+def count(dictionary, key):
+
+    #tags count
+    if dictionary.get(key) == None:
+        dictionary[key] = 1
+    else:
+        dictionary[key] += 1
+            
+    return dictionary
 
 def parseInputFile(inputFileName):
     #contains the combination of (words, tag) to determine likelihood probs
@@ -19,9 +41,19 @@ def parseInputFile(inputFileName):
     #contains the combination of (tagN-1, tagN) to determine observation probs
     observationCount = dict()
 
+    #dictionaries for likelihood and observation
+    likelihoodProbs = dict()
+    observationProbs = dict()
+    
     #needed values for likelihood and observations probs
     tagsDict = dict()
+    #storing the tags and words sequences as in the input file
     tagsList = []
+    wordsList = []
+
+    #constants needed to determine the probability
+    CONST_OBSERVATION_KEY_LOCATION = 0
+    CONST_TRANSITION_KEY_LOCATION = 1
     
     with open(inputFileName) as input:
         content = [line.rstrip() for line in open(inputFileName)]
@@ -34,31 +66,26 @@ def parseInputFile(inputFileName):
         for word,tag in lineValues:
             #tags list - preserves the order, needed for transition probs
             tagsList.append(tag)
-            
-            #tags count
-            if tagsDict.get(tag) == None:
-                tagsDict[tag] = 1
-            else:
-                tagsDict[tag] += 1
-            
+            wordsList.append(word)
+
+            #counting the tags
+            tagsDict = count(tagsDict, tag)
+
+            #likelihood count
             alias = (word, tag)
-            #likelihood dictionary count
-            if  likelihoodCount.get(alias) == None:
-               likelihoodCount[alias] = 1
-            else:
-               likelihoodCount[alias] += 1
+            likelihoodCount = count(likelihoodCount, alias)
 
     #iterate to only N-1 elements in the list
     #get the bigrams for tags, it works as the count for observation probs
     for i in range(0,len(tagsList)-1):
         alias = (tagsList[i], tagsList[i+1])
-
-        if observationCount.get(alias) == None:
-            observationCount[alias] = 1
-        else:
-            observationCount[alias] += 1
         
-        #print(alias)
+        #observation count
+        observationCount = count(observationCount, alias)
+
+    #Probabilities - transition and likelihood
+    likelihoodProbs = calculateProbability(likelihoodCount, tagsDict, CONST_TRANSITION_KEY_LOCATION)
+    observationProbs = calculateProbability(observationCount, tagsDict, CONST_OBSERVATION_KEY_LOCATION)
 
     #############DEBUGGING##########################   
     #print(tagsList)
