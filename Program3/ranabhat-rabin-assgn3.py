@@ -73,7 +73,7 @@ def parseInputFile(trainingCorpusList):
         #counting the tags
         tagsDict = count(tagsDict, lineValues[1])
 
-        #likelihood count
+        #observation likelihood count
         alias = (lineValues[0], lineValues[1])
         observationCount = count(observationCount, alias)
 
@@ -158,8 +158,8 @@ def main():
     trainingCorpus.append(testCorpus[0])
     testCorpus = testCorpus[1:]
     
-    print("training corpus:")
-    print(trainingCorpus)
+    #print("training corpus:")
+    #print(trainingCorpus)
 
     #print("test corpus:")
     #print(testCorpus)
@@ -173,7 +173,7 @@ def main():
     #read the file and create two dictionaries - tags and words (bigrams)
 
     #printDict(observationProbsMatrix)
-    printDict(transitionProbsMatrix)
+    #printDict(transitionProbsMatrix)
     #printDict(observationCount)
     
     #test
@@ -181,11 +181,48 @@ def main():
     #print(testSentences)
 
     #determines new words
-    for i in range(0, len(testSentences)):
-        if(newWord(observationCount, testSentences[i])):
-           print("new word",testSentences[i])
+    #for i in range(0, len(testSentences)):
+    #    if(newWord(observationCount, testSentences[i])):
+    #       print("new word",testSentences[i])
+           #need to do something with words that are not part of the training corpus
+    #transition smoothing
+    #if(tagSequence(transitionCount, ("JJ", "."))):
+    #    print ("has it")
+    #else:
+    #    print("Nope")
     
-    #check for unknown words
+    #sending the input sentences one at a time to send it to viterbi
+    testSentence = []
+        
+    for i in range(0, len(testSentences)):
+        if(testSentences[i] == "."):
+            Viterbi(testSentence, observationProbsMatrix, transitionProbsMatrix)
+            testSentence = []
+        else:
+            testSentence.append(testSentences[i])
+
+                
+def Viterbi(sentence, observationProbsMatrix, transitionProbsMatrix):
+    bestPath = []
+
+    #print(sentence)
+    #print("\n")
+
+    #...........put viterbi code here
+
+    
+    return bestPath
+    
+#determines if the tag sequence is in the transition probability key list. Returns TRUE if in the list or false otherwise
+def tagSequence(tagsListDict, inputTagSet):
+    hasTagSequence = False
+
+    for key, value in tagsListDict.items():
+        if(key[0] == inputTagSet[0] and key[1] == inputTagSet[1]):
+            hasTagSequence = True
+            break
+
+    return hasTagSequence
 
 #takes the tab delimited list input and returns the values that are mandated by the index location
 def returnList(inputList, index):
