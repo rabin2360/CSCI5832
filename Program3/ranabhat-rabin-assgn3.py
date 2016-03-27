@@ -67,8 +67,11 @@ def parseInputFile(trainingCorpusList):
         
         #for word,tag in lineValues:
         #tags list - preserves the order, needed for transition probs
-        tagsList.append(lineValues[1])
-        wordsList.append(lineValues[0])
+        #ignore the start tags
+        if lineValues[0] != '<start>':
+            #print(lineValues[1])
+            tagsList.append(lineValues[1])
+            wordsList.append(lineValues[0])
 
         #counting the tags
         tagsDict = count(tagsDict, lineValues[1])
@@ -146,7 +149,7 @@ def main():
     #printDict(transitionProbsMatrix)
     #printDict(observationCount)
     
-    #test
+    #test file
 
     masterList = []
     masterList.append("<start>\tST")
@@ -169,7 +172,7 @@ def main():
     observationSeq = []
 
     #write to a file
-    file = open("ouputFile.txt", "w+")
+    file = open("outputFile.txt", "w+")
     backtrace = []
     tagSeq =  []
     
@@ -198,6 +201,7 @@ def main():
     file.close()
     
 def Viterbi(sentence, observationProbsMatrix, transitionProbsMatrix):
+
     print()
     bestPath = []
     tagsDict = dict()
@@ -219,27 +223,28 @@ def Viterbi(sentence, observationProbsMatrix, transitionProbsMatrix):
 
     #initialization array
     initializeArray = dict()
-    
+
+    #for all the tags in the tagsDict, calculate P(ST,tags)
     for key, value in tagsDict.items():
         alias = ("ST", key)
+
         #elements are in the transition matrix
         if transitionProbsMatrix.get(alias) != None:
-           #print(alias, ":", transitionProbsMatrix.get(alias))
-           initializeArray[alias] = transitionProbsMatrix.get(alias)
+            #print(alias, ":", transitionProbsMatrix.get(alias))
+            initializeArray[alias] = transitionProbsMatrix.get(alias)
         else:
             initializeArray[alias] = 1/(len(tagsDict)*len(tagsDict))
             #print(alias, ": Not in the matrix", 1/len(tagsDict))
 
     #print(initializeArray)
-
-    
     #print(len(sentence))
     #print(len(tagSeq))
 
     maxValue = 0
     
-    #initialize the first row in the viterbi matrix
+    #values for the first column in the Viterbi matrix
     for row in range(0, len(tagSeq)):
+
         #transition probability
         tag = tagSeq[row]
         alias = ("ST", tag)
@@ -249,7 +254,7 @@ def Viterbi(sentence, observationProbsMatrix, transitionProbsMatrix):
         #observation probability
         word = sentence[0]
         alias = (word, tag)
-        newWord = True
+        #newWord = True
 
         #determine if the observation sequence is in the matrix
         #if not then estimate a probability
@@ -264,21 +269,27 @@ def Viterbi(sentence, observationProbsMatrix, transitionProbsMatrix):
         #print(observationProb)
         viterbiMatrix[row][0] = observationProb * transitionProb
 
+        #keeping track of maxValue in the first column in the viterbi matrix
         if maxValue < viterbiMatrix[row][0]:
             maxValue = viterbiMatrix[row][0]
 
     transitionVal = 0
 
     #rest of the viterbi matrix
+
+    #for each word
     for col in range(1, len(sentence)):
 
+        #for all the tags
         for row in range(0, len(tagSeq)):
+            
             #print(sentence[col], ", ", tagSeq[row])
 
             #transition probability
             transitionVal = 0
             maxValue = 0
 
+            #observation probability
             alias = (sentence[col], tagSeq[row])
             #print(alias)
 
@@ -286,6 +297,7 @@ def Viterbi(sentence, observationProbsMatrix, transitionProbsMatrix):
                 observationProb = observationProbsMatrix.get(alias)
             else:
                 observationProb = 1/(len(tagsDict)*len(tagsDict))
+
             
             for previousRow in range(0, len(tagSeq)):
                 alias = (tagSeq[previousRow], tagSeq[row])
