@@ -107,8 +107,8 @@ def printDict(dict):
     
 def main():
     #check input vector to see what the user is supplying
-    if (len(sys.argv) != 2):
-        print("Not enough arguments- argument format <python file><inputfile>\n")
+    if (len(sys.argv) != 3):
+        print("Not enough arguments- argument format <python file><trainingfile><testFile>\n")
         sys.exit()
 
     totalSentences = 0
@@ -118,100 +118,224 @@ def main():
     trainingCorpus = []
     testCorpus = []
     content = []
-    
-    #80-20 split
+    masterList = []
+    masterList.append("<start>\tST")
+
+    #training corpus
     with open(sys.argv[1]) as input:
         content = [line.rstrip() for line in open(sys.argv[1])]
-        #ignore blank lines
-        content = list(line for line in content if line)
-
-        #count the periods in the corpus
-        for line in input:
-            #finding period in the input read
-            temp = len(re.findall('\.', line))
-            totalSentences = temp + totalSentences
-            #content = input.readlines()
-
-    splitLimit = (math.floor(0.8*totalSentences)/2)
-
-    if(splitLimit%2 != 0):
-        splitLimit +=1
-    
-    #print("count", totalSentences)
-    #print("0.8 percent", splitLimit)
-    #print(content)
-
-    contentDivider = 0
-
-    #dividing the input between training and test corpus
-    for i in range(0,len(content)):
-        temp = len(re.findall('\.', content[i]))
-        contentDivider = contentDivider + temp
         
-        if(contentDivider <=  splitLimit):
-            trainingCorpus.append(content[i])
-        else:
-            testCorpus.append(content[i]) 
+    #adding start tag whereve there is an empty line
+    for i in range(0, len(content)):
+        if(content[i] ==""):
+            content[i] = "<start>\tST"
+                        
+    masterList.extend(content)
 
-
-    #fixing some of the kinks in the divide
-    trainingCorpus.append(testCorpus[0])
-    testCorpus = testCorpus[1:]
-    
-    #print("training corpus:")
-    #print(trainingCorpus)
-
-    #print("test corpus:")
-    #print(testCorpus)
-    
     #training 
     observationProbsMatrix = dict()
     transitionProbsMatrix = dict()
     transitionCount = dict()
     observationCount = dict()
-    observationProbsMatrix, transitionProbsMatrix, transitionCount, observationCount = parseInputFile(trainingCorpus)
+    observationProbsMatrix, transitionProbsMatrix, transitionCount, observationCount = parseInputFile(masterList)
+
     #read the file and create two dictionaries - tags and words (bigrams)
 
+    #(word, tag)
     #printDict(observationProbsMatrix)
     #printDict(transitionProbsMatrix)
     #printDict(observationCount)
     
     #test
-    testSentences = returnList(testCorpus, 0)
-    #print(testSentences)
 
-    #determines new words
-    #for i in range(0, len(testSentences)):
-    #    if(newWord(observationCount, testSentences[i])):
-    #       print("new word",testSentences[i])
-           #need to do something with words that are not part of the training corpus
-    #transition smoothing
-    #if(tagSequence(transitionCount, ("JJ", "."))):
-    #    print ("has it")
-    #else:
-    #    print("Nope")
-    
-    #sending the input sentences one at a time to send it to viterbi
-    testSentence = []
+    masterList = []
+    masterList.append("<start>\tST")
+
+    #training corpus
+    with open(sys.argv[2]) as input:
+        content = [line.rstrip() for line in open(sys.argv[2])]
         
-    for i in range(0, len(testSentences)):
-        if(testSentences[i] == "."):
-            Viterbi(testSentence, observationProbsMatrix, transitionProbsMatrix)
-            testSentence = []
+    #adding start tag whereve there is an empty line
+    for i in range(0, len(content)):
+        if(content[i] ==""):
+            content[i] = "<start>\tST"
+               
+    masterList.extend(content)
+    
+    observationSeqs = returnList(masterList, 0)
+    #print(observationSeqs)
+
+    #sending the input sentences one at a time to send it to viterbi
+    observationSeq = []
+
+    #write to a file
+    file = open("ouputFile.txt", "w+")
+    backtrace = []
+    tagSeq =  []
+    
+    for i in range(0, len(observationSeqs)):
+        if(observationSeqs[i] == "."):
+            observationSeq.append(observationSeqs[i])
+            backtrace, tagSeq = Viterbi(observationSeq, observationProbsMatrix, transitionProbsMatrix)
+
+            for i in range(1, len(backtrace)):
+                #get tags
+                #print(backtrace[i][0],",",backtrace[i][1])
+
+                word = observationSeq[backtrace[i][1]]
+                tag = tagSeq[backtrace[i][0]]
+
+                print(word,", ", tag)
+                file.write(word+"\t"+tag+"\n")
+
+            file.write("\n")
+            
+            #reset the current sentence buffer after sending the sentence to be viterbi evaluated
+            observationSeq = []
         else:
-            testSentence.append(testSentences[i])
+            observationSeq.append(observationSeqs[i])
 
-                
+    file.close()
+    
 def Viterbi(sentence, observationProbsMatrix, transitionProbsMatrix):
+    print()
     bestPath = []
+    tagsDict = dict()
 
-    #print(sentence)
-    #print("\n")
+    #create dictionary of tags
+    for i in range(0, len(tagsList)):
+        tagsDict = count(tagsDict, tagsList[i])
 
-    #...........put viterbi code here
+    #tag Sequeunce
+    tagSeq = []
+    for tag, value in tagsDict.items():
+        #print(tag)
+        tagSeq.append(tag)
+
+    #print(tagSeq)
+
+    #[column][row]
+    viterbiMatrix = [[0 for col in range(len(sentence))] for row in range(len(tagsDict))]
+
+    #initialization array
+    initializeArray = dict()
+    
+    for key, value in tagsDict.items():
+        alias = ("ST", key)
+        #elements are in the transition matrix
+        if transitionProbsMatrix.get(alias) != None:
+           #print(alias, ":", transitionProbsMatrix.get(alias))
+           initializeArray[alias] = transitionProbsMatrix.get(alias)
+        else:
+            initializeArray[alias] = 1/(len(tagsDict)*len(tagsDict))
+            #print(alias, ": Not in the matrix", 1/len(tagsDict))
+
+    #print(initializeArray)
 
     
-    return bestPath
+    #print(len(sentence))
+    #print(len(tagSeq))
+
+    maxValue = 0
+    
+    #initialize the first row in the viterbi matrix
+    for row in range(0, len(tagSeq)):
+        #transition probability
+        tag = tagSeq[row]
+        alias = ("ST", tag)
+        transitionProb = initializeArray.get(alias)
+        #print(alias, ": ", transitionProb)
+
+        #observation probability
+        word = sentence[0]
+        alias = (word, tag)
+        newWord = True
+
+        #determine if the observation sequence is in the matrix
+        #if not then estimate a probability
+        #if it is in the matrix then get the probability
+        if observationProbsMatrix.get(alias) == None:
+            #print("None: ", alias)
+            observationProb = 1/(len(tagsDict)*len(tagsDict))
+        else:
+            #print("ALIAS:",  alias)
+            observationProb = observationProbsMatrix.get(alias)
+
+        #print(observationProb)
+        viterbiMatrix[row][0] = observationProb * transitionProb
+
+        if maxValue < viterbiMatrix[row][0]:
+            maxValue = viterbiMatrix[row][0]
+
+    transitionVal = 0
+
+    #rest of the viterbi matrix
+    for col in range(1, len(sentence)):
+
+        for row in range(0, len(tagSeq)):
+            #print(sentence[col], ", ", tagSeq[row])
+
+            #transition probability
+            transitionVal = 0
+            maxValue = 0
+
+            alias = (sentence[col], tagSeq[row])
+            #print(alias)
+
+            if observationProbsMatrix.get(alias) != None:
+                observationProb = observationProbsMatrix.get(alias)
+            else:
+                observationProb = 1/(len(tagsDict)*len(tagsDict))
+            
+            for previousRow in range(0, len(tagSeq)):
+                alias = (tagSeq[previousRow], tagSeq[row])
+                
+                if transitionProbsMatrix.get(alias) != None:
+                    #print(alias, ":", transitionProbsMatrix.get(alias))
+                    transitionVal = transitionProbsMatrix.get(alias)
+                else:
+                    transitionVal = 1/(len(tagsDict)*len(tagsDict))
+                    #print(alias, ": Not in the matrix", 1/len(tagsDict))
+
+                value = viterbiMatrix[previousRow][col-1]
+                value  = value * transitionVal * observationProb
+                #print(value)
+                if maxValue < value:
+                    #print(maxValue)
+                    maxValue = value
+            
+            viterbiMatrix[row][col] = maxValue
+
+        #rest of the viterbi matrix
+                
+    #print(maxValue)
+    #print(viterbiMatrix)
+    
+    backtrace = []
+    for col in range(0, len(sentence)):
+        maxInCol = 0
+        indexes = (-1, -1)
+        for row in range(0, len(tagSeq)):
+
+            if maxInCol < viterbiMatrix[row][col]:
+                maxInCol = viterbiMatrix[row][col]
+                indexes = (row, col)
+
+        backtrace.append(indexes)
+
+    #print(backtrace)
+        
+    #for i in range(0, len(backtrace)):
+        #get tags
+        #print(backtrace[i][0],",",backtrace[i][1])
+
+        #word = sentence[backtrace[i][1]]
+        #tag = tagSeq[backtrace[i][0]]
+
+        #print(word,", ", tag)
+        
+    
+    return backtrace, tagSeq
     
 #determines if the tag sequence is in the transition probability key list. Returns TRUE if in the list or false otherwise
 def tagSequence(tagsListDict, inputTagSet):
