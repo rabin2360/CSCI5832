@@ -109,17 +109,14 @@ def printDict(dict):
         print (key, value)
     
 def main():
-    #check input vector to see what the user is supplying
+    #check input vector
     if (len(sys.argv) != 3):
         print("Not enough arguments- argument format <python file><trainingfile><testFile>\n")
         sys.exit()
 
-    totalSentences = 0
-    temp = 0
-    count = 0
-    
     trainingCorpus = []
     testCorpus = []
+
     content = []
     masterList = []
     masterList.append("<start>\tST")
@@ -135,7 +132,7 @@ def main():
                         
     masterList.extend(content)
 
-    #training 
+    #training corpus 
     observationProbsMatrix = dict()
     transitionProbsMatrix = dict()
     transitionCount = dict()
@@ -164,34 +161,38 @@ def main():
             content[i] = "<start>\tST"
                
     masterList.extend(content)
-    
     observationSeqs = returnList(masterList, 0)
     #print(observationSeqs)
 
     #sending the input sentences one at a time to send it to viterbi
     observationSeq = []
 
+    print("Please Wait. Writing to outputFile.txt ....")
+
     #write to a file
     file = open("outputFile.txt", "w+")
     backtrace = []
     tagSeq =  []
+    #testTagSeq =  []
     
     for i in range(0, len(observationSeqs)):
         if(observationSeqs[i] == "."):
             observationSeq.append(observationSeqs[i])
             backtrace, tagSeq = Viterbi(observationSeq, observationProbsMatrix, transitionProbsMatrix)
 
-            for i in range(1, len(backtrace)):
+            for j in range(1, len(backtrace)):
                 #get tags
                 #print(backtrace[i][0],",",backtrace[i][1])
+                word = observationSeq[backtrace[j][1]]
+                tag = tagSeq[backtrace[j][0]]
+                #testTagSeq.append(tag)
+                #print(word,", ", tag)
+                file.write(word+"\t"+tag+"\n\n")
+		#file.write("\n")
 
-                word = observationSeq[backtrace[i][1]]
-                tag = tagSeq[backtrace[i][0]]
-
-                print(word,", ", tag)
-                file.write(word+"\t"+tag+"\n")
-
-            file.write("\n")
+            #in order to match the gold standard provided    
+            if i != (len(observationSeqs)-1):
+                file.write("\n\n")
             
             #reset the current sentence buffer after sending the sentence to be viterbi evaluated
             observationSeq = []
@@ -200,10 +201,12 @@ def main():
 
     file.close()
     
+    print("Writing Completed!")
+                    
+#Viterbi algorithm
 def Viterbi(sentence, observationProbsMatrix, transitionProbsMatrix):
 
-    print()
-    bestPath = []
+    #print()
     tagsDict = dict()
 
     #create dictionary of tags
@@ -336,30 +339,9 @@ def Viterbi(sentence, observationProbsMatrix, transitionProbsMatrix):
         backtrace.append(indexes)
 
     #print(backtrace)
-        
-    #for i in range(0, len(backtrace)):
-        #get tags
-        #print(backtrace[i][0],",",backtrace[i][1])
-
-        #word = sentence[backtrace[i][1]]
-        #tag = tagSeq[backtrace[i][0]]
-
-        #print(word,", ", tag)
-        
     
     return backtrace, tagSeq
     
-#determines if the tag sequence is in the transition probability key list. Returns TRUE if in the list or false otherwise
-def tagSequence(tagsListDict, inputTagSet):
-    hasTagSequence = False
-
-    for key, value in tagsListDict.items():
-        if(key[0] == inputTagSet[0] and key[1] == inputTagSet[1]):
-            hasTagSequence = True
-            break
-
-    return hasTagSequence
-
 #takes the tab delimited list input and returns the values that are mandated by the index location
 def returnList(inputList, index):
     returnList = []
@@ -369,17 +351,6 @@ def returnList(inputList, index):
         returnList.append(lineValues[index])
 
     return returnList
-
-#identifies if a word in the test corpus is a new one
-def newWord(wordsListDict, inputWord):
-    hasNewWord = True
-
-    for key, value in wordsListDict.items():
-        if (key[0] == inputWord):
-            hasNewWord = False
-            break
-        
-    return hasNewWord
 
 #makes the main method the default method
 if __name__=="__main__":
